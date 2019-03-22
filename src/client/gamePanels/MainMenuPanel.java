@@ -128,19 +128,14 @@ public class MainMenuPanel extends JPanel implements Runnable {
 			return false;
 		}
 
-		System.out.println("x");
-		
 		String mapData = Util.waitUntilRead(ShooterClient.getSocket(), 10000);
 
-		System.out.println("y");
-		
 		if (mapData == null) {
 			JOptionPane.showMessageDialog(this, "Unable to retrive session info from server", "Error",
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		ShooterClient.setMap(new Map(mapData));
-		System.out.println("z");
 		return true;
 	}
 
@@ -158,7 +153,9 @@ public class MainMenuPanel extends JPanel implements Runnable {
 			Util.writeSocket(ShooterClient.getSocket(), username);
 			String usernameResponse = Util.waitUntilRead(ShooterClient.getSocket(), 5000);
 
-			if (usernameResponse.equals("approved")) {
+			if (usernameResponse.startsWith("approved:")) {
+				ShooterClient
+						.setLocalID(Integer.parseInt(usernameResponse.substring(usernameResponse.indexOf(":") + 1)));
 				break;
 			} else {
 				JOptionPane.showMessageDialog(this,

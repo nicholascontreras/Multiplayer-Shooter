@@ -57,7 +57,7 @@ public class Util {
 			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			return br.readLine();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Error reading from socket");
 		}
 		return null;
 	}
@@ -92,7 +92,7 @@ public class Util {
 			bw.newLine();
 			bw.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Error writing to socket");
 		}
 	}
 

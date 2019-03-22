@@ -27,6 +27,7 @@ public class Player {
 
 	private String username;
 
+	private int team;
 	private boolean isSpawned;
 
 	private long nextSpawnTime;
@@ -35,41 +36,73 @@ public class Player {
 
 	private double movementSpeed;
 
-	private int team;
-
 	private long lastUpdateTime;
 
 	public Player() {
 		id = NEXT_ID;
 		NEXT_ID++;
+		renewLastUpdateTime();
+	}
+
+	public Player(int id) {
+		this.id = id;
+	}
+
+	public Player(String dataString) {
+		updateFromServerMessage(dataString);
+		renewLastUpdateTime();
 	}
 
 	public void updateFromClientMessage(String messageFromClient) {
-		String moveDirection = Util.readUpTo(messageFromClient, ",");
 
-		double deltaX = 0, deltaY = 0;
+		switch (messageFromClient) {
+		case "requestSpawn":
+			if (getSecsUntilSpawn() == 0) {
+				isSpawned = true;
+			}
+			break;
+		default:
+			String moveDirection = Util.readUpTo(messageFromClient, ",");
+			double deltaX = 0, deltaY = 0;
+			if (moveDirection.contains("N")) {
+				deltaY = -movementSpeed;
+			} else if (moveDirection.contains("S")) {
+				deltaY = movementSpeed;
+			}
+			if (moveDirection.contains("W")) {
+				deltaX = -movementSpeed;
+			} else if (moveDirection.contains("E")) {
+				deltaX = movementSpeed;
+			}
 
-		if (moveDirection.contains("N")) {
-			deltaY = -movementSpeed;
-		} else if (moveDirection.contains("S")) {
-			deltaY = movementSpeed;
-		}
-		if (moveDirection.contains("W")) {
-			deltaX = -movementSpeed;
-		} else if (moveDirection.contains("E")) {
-			deltaX = movementSpeed;
-		}
+			if (moveDirection.length() == 2) {
+				deltaX *= Math.sqrt(2);
+				deltaY *= Math.sqrt(2);
+			}
 
-		if (moveDirection.length() == 2) {
-			deltaX *= Math.sqrt(2);
-			deltaY *= Math.sqrt(2);
+			xPos += deltaX;
+			yPos += deltaY;
+			break;
 		}
 	}
 
 	public void updateFromServerMessage(String messageFromServer) {
-
+		id = Integer.parseInt(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		username = Util.readUpTo(messageFromServer, ",");
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		team = Integer.parseInt(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		isSpawned = Boolean.parseBoolean(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		setSpawnAvaliableIn(Integer.parseInt(Util.readUpTo(messageFromServer, ",")));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		xPos = Double.parseDouble(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		yPos = Double.parseDouble(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
 	}
-	
+
 	public void setSpawnAvaliableIn(int seconds) {
 		nextSpawnTime = System.currentTimeMillis() + seconds * 1000;
 	}
@@ -87,7 +120,8 @@ public class Player {
 	}
 
 	public String getSendableForm() {
-		return id + "," + xPos + "," + yPos;
+		return id + "," + username + "," + team + "," + isSpawned + "," + getSecsUntilSpawn() + "," + xPos + "," + yPos
+				+ ";";
 	}
 
 	public void setSpawned(boolean isSpawned) {
@@ -106,13 +140,29 @@ public class Player {
 		return this.team;
 	}
 
+	public void renewLastUpdateTime() {
+		lastUpdateTime = System.currentTimeMillis();
+	}
+
 	public boolean isStale() {
 		return lastUpdateTime + MAX_TIME_WITHOUT_UPDATE < System.currentTimeMillis();
+	}
+
+	public int getID() {
+		return id;
 	}
 
 	@Override
 	public int hashCode() {
 		return id;
+	}
+
+	public double getXPos() {
+		return xPos;
+	}
+
+	public double getYPos() {
+		return yPos;
 	}
 
 	@Override

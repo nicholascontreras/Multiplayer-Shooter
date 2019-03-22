@@ -124,7 +124,7 @@ public class ShooterServer {
 						synchronized (connectedPlayers) {
 							connectedPlayers.put(player, curSocket);
 						}
-						Util.writeSocket(curSocket, "approved");
+						Util.writeSocket(curSocket, "approved:" + player.getID());
 					} else {
 						Util.writeSocket(curSocket, problem);
 						incomingSockets.put(curSocket, System.currentTimeMillis());
@@ -148,21 +148,13 @@ public class ShooterServer {
 		HashSet<Player> playersToRemove = new HashSet<Player>();
 		synchronized (connectedPlayers) {
 			for (Player curPlayer : connectedPlayers.keySet()) {
-
 				String messageFromClient = Util.readSocket(connectedPlayers.get(curPlayer));
 
 				if (messageFromClient != null) {
+					curPlayer.renewLastUpdateTime();
 
-					switch (messageFromClient) {
-					case "spawnTime":
-						Util.writeSocket(connectedPlayers.get(curPlayer), curPlayer.getSecsUntilSpawn() + "");
-						break;
-					case "spawn":
-						curPlayer.setSpawned(true);
-						break;
-					default:
+					if (!messageFromClient.equals("keepAlive")) {
 						curPlayer.updateFromClientMessage(messageFromClient);
-						break;
 					}
 				}
 				updateMessage += curPlayer.getSendableForm() + ";";
@@ -181,8 +173,10 @@ public class ShooterServer {
 
 			for (Player curPlayer : playersToRemove) {
 				connectedPlayers.remove(curPlayer);
+				System.out.println("Removed player " + curPlayer.getID() + " because the connection was stale");
 			}
 		}
+
 	}
 
 	private String getProblemWithUsername(String username) {

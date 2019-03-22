@@ -11,7 +11,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -34,6 +37,7 @@ import client.gamePanels.GamePanel;
 import client.gamePanels.MainMenuPanel;
 import client.gamePanels.SpawnMenuPanel;
 import shared.Map;
+import shared.Player;
 
 /**
  * @author Nicholas Contreras
@@ -51,6 +55,9 @@ public class ShooterClient implements Runnable {
 
 	private static Map map;
 
+	private static int localID;
+	private static ArrayList<Player> players;
+
 	private static Socket socket;
 
 	public static void main(String[] args) {
@@ -59,6 +66,8 @@ public class ShooterClient implements Runnable {
 
 	public void run() {
 		setUIFont(new FontUIResource("SansSerif", Font.PLAIN, 24));
+
+		players = new ArrayList<Player>();
 
 		gamePanels = new HashMap<String, JPanel>();
 		gamePanels.put("MainMenu", new MainMenuPanel());
@@ -115,12 +124,81 @@ public class ShooterClient implements Runnable {
 		return map;
 	}
 
+	public static void updateGameFromMessage(String message) {
+		message = message.substring("update:".length());
+		String[] splitMessage = message.split(";");
+
+		for (String playerData : splitMessage) {
+			int curPlayerID = Integer.parseInt(playerData.substring(0, playerData.indexOf(",")));
+
+			boolean foundPlayer = false;
+			synchronized (players) {
+				for (Player p : players) {
+					if (p.getID() == curPlayerID) {
+						p.updateFromServerMessage(playerData);
+						p.renewLastUpdateTime();
+						foundPlayer = true;
+						break;
+					}
+				}
+
+				if (!foundPlayer) {
+					Player newPlayer = new Player(playerData);
+					players.add(newPlayer);
+				}
+			}
+		}
+
+		HashSet<Player> playersToRemove = new HashSet<Player>();
+		synchronized (players) {
+			for (Player p : players) {
+				if (p.isStale()) {
+					playersToRemove.add(p);
+				}
+			}
+			for (Player p : playersToRemove) {
+				players.remove(p);
+				System.out.println("Removed player " + p.getID() + " because the connection was stale");
+			}
+		}
+	}
+
+	public static void setLocalID(int id) {
+		localID = id;
+	}
+
+	public static boolean isLocalPlayerConnected() {
+		synchronized (players) {
+			for (Player p : players) {
+				if (p.getID() == localID) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static Player getLocalPlayer() {
+		synchronized (players) {
+			for (Player p : players) {
+				if (p.getID() == localID) {
+					return p;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public static ArrayList<Player> getPlayers() {
+		return players;
+	}
+
 	private static void setUIFont(FontUIResource f) {
-		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
+		Enumeration<Object> keys = UIManager.getDefaults().keys();
 		while (keys.hasMoreElements()) {
 			Object key = keys.nextElement();
 			Object value = UIManager.get(key);
-			if (value instanceof javax.swing.plaf.FontUIResource)
+			if (value instanceof FontUIResource)
 				UIManager.put(key, f);
 		}
 	}

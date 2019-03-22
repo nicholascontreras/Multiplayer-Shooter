@@ -25,7 +25,6 @@ public class SpawnMenuPanel extends JPanel implements Runnable {
 
 		spawnButton = new JButton(">>> Spawn <<<");
 		spawnButton.addActionListener((ActionEvent e) -> {
-			System.out.println("button pressed");
 			waitingToSpawn = !waitingToSpawn;
 
 			if (!waitingToSpawn) {
@@ -38,18 +37,22 @@ public class SpawnMenuPanel extends JPanel implements Runnable {
 
 	@Override
 	public void run() {
-		if (waitingToSpawn) {
-			System.out.println("asked server for spawntime");
-			Util.writeSocket(ShooterClient.getSocket(), "spawnTime");
-			int timeTillSpawn = Integer.parseInt(Util.waitForeverUntilRead(ShooterClient.getSocket()));
+		Util.writeSocket(ShooterClient.getSocket(), "keepAlive");
 
-			if (timeTillSpawn == 0) {
-				Util.writeSocket(ShooterClient.getSocket(), "spawn");
-				ShooterClient.switchPanel("Game");
-				waitingToSpawn = false;
-				spawnButton.setText(">>> Spawn <<<");
-			} else {
+		String msg = Util.readSocket(ShooterClient.getSocket());
+
+		if (msg != null) {
+			ShooterClient.updateGameFromMessage(msg);
+			if (waitingToSpawn) {
+				Util.writeSocket(ShooterClient.getSocket(), "requestSpawn");
+				int timeTillSpawn = ShooterClient.getLocalPlayer().getSecsUntilSpawn();
 				spawnButton.setText("Spawning in: " + timeTillSpawn);
+
+				if (ShooterClient.getLocalPlayer().isSpawned()) {
+					ShooterClient.switchPanel("Game");
+					waitingToSpawn = false;
+					spawnButton.setText(">>> Spawn <<<");
+				}
 			}
 		}
 
