@@ -51,7 +51,6 @@ public class InputManager {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				KEYS_PRESSED.add(e.getKeyCode());
-				System.out.println("added: " + e.getKeyCode());
 			}
 
 			@Override

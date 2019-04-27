@@ -121,6 +121,7 @@ public class MainMenuPanel extends JPanel implements Runnable {
 	}
 
 	private boolean attemptToConnect(String address, int port) {
+		System.out.println("attempting to connect to address: " + address + " port: " + port);
 		ShooterClient.setSocket(Util.attemptToConnect(address, port));
 
 		if (ShooterClient.getSocket() == null) {

@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -35,9 +36,13 @@ public class Util {
 
 	public static Socket attemptToConnect(String address, int port) {
 		try {
-			Socket socket = new Socket(address, port);
+			System.out.println("binding socket");
+			Socket socket = new Socket();
+			socket.connect(new InetSocketAddress(address, port), 10000);
+			System.out.println("socket bound");
 			return socket;
 		} catch (IOException e) {
+			System.out.println("error binding socket");
 			e.printStackTrace();
 		}
 		return null;
@@ -54,8 +59,10 @@ public class Util {
 
 	public static String readSocket(Socket socket) {
 		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			return br.readLine();
+			if (socket.getInputStream().available() > 0) {
+				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				return br.readLine();
+			}
 		} catch (IOException e) {
 			System.err.println("Error reading from socket");
 		}

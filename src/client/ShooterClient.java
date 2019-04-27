@@ -106,6 +106,7 @@ public class ShooterClient implements Runnable {
 	public static void switchPanel(String panelName) {
 		((CardLayout) outerPanel.getLayout()).show(outerPanel, panelName);
 		curPanelRunning = (Runnable) gamePanels.get(panelName);
+		frame.requestFocus();
 	}
 
 	public static void setSocket(Socket s) {
@@ -125,7 +126,12 @@ public class ShooterClient implements Runnable {
 	}
 
 	public static void updateGameFromMessage(String message) {
-		message = message.substring("update:".length());
+		System.out.println("process: " + message);
+
+		if (message.isEmpty()) {
+			return;
+		}
+
 		String[] splitMessage = message.split(";");
 
 		for (String playerData : splitMessage) {
@@ -188,7 +194,7 @@ public class ShooterClient implements Runnable {
 		}
 		return null;
 	}
-	
+
 	public static ArrayList<Player> getPlayers() {
 		return players;
 	}

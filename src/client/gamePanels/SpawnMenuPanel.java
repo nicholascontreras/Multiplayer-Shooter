@@ -37,27 +37,32 @@ public class SpawnMenuPanel extends JPanel implements Runnable {
 
 	@Override
 	public void run() {
-		Util.writeSocket(ShooterClient.getSocket(), "keepAlive");
+		String messageFromServer = Util.readSocket(ShooterClient.getSocket());
 
-		String msg = Util.readSocket(ShooterClient.getSocket());
-
-		if (msg != null) {
-			ShooterClient.updateGameFromMessage(msg);
-			if (waitingToSpawn) {
-				Util.writeSocket(ShooterClient.getSocket(), "requestSpawn");
-				int timeTillSpawn = ShooterClient.getLocalPlayer().getSecsUntilSpawn();
-				spawnButton.setText("Spawning in: " + timeTillSpawn);
-
-				if (ShooterClient.getLocalPlayer().isSpawned()) {
-					ShooterClient.switchPanel("Game");
-					waitingToSpawn = false;
-					spawnButton.setText(">>> Spawn <<<");
-				}
+		while (messageFromServer != null) {
+			if (messageFromServer.startsWith("update:")) {
+				ShooterClient.updateGameFromMessage(messageFromServer.substring("update:".length()));
 			}
+			messageFromServer = Util.readSocket(ShooterClient.getSocket());
+		}
+
+		if (waitingToSpawn) {
+			Util.writeSocket(ShooterClient.getSocket(), "requestSpawn");
+			int timeTillSpawn = ShooterClient.getLocalPlayer().getSecsUntilSpawn();
+			spawnButton.setText("Spawning in: " + timeTillSpawn);
+
+			if (ShooterClient.getLocalPlayer().isSpawned()) {
+				ShooterClient.switchPanel("Game");
+				waitingToSpawn = false;
+				spawnButton.setText(">>> Spawn <<<");
+
+			}
+		} else {
+			Util.writeSocket(ShooterClient.getSocket(), "keepAlive");
 		}
 
 		try {
-			Thread.sleep(250);
+			Thread.sleep(100);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

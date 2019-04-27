@@ -12,7 +12,9 @@ import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
 
+import server.ShooterServer;
 import util.Util;
+import util.Vector2D;
 
 /**
  * @author Nicholas Contreras
@@ -33,8 +35,10 @@ public class Player {
 	private long nextSpawnTime;
 
 	private double xPos, yPos;
+	
+	private int drawRadius = 20;
 
-	private double movementSpeed;
+	private double movementSpeed = 2;
 
 	private long lastUpdateTime;
 
@@ -58,11 +62,13 @@ public class Player {
 		switch (messageFromClient) {
 		case "requestSpawn":
 			if (getSecsUntilSpawn() == 0) {
+				ShooterServer.getInst().moveToSpawn(this);
 				isSpawned = true;
 			}
 			break;
 		default:
 			String moveDirection = Util.readUpTo(messageFromClient, ",");
+			moveDirection = moveDirection.trim();
 			double deltaX = 0, deltaY = 0;
 			if (moveDirection.contains("N")) {
 				deltaY = -movementSpeed;
@@ -76,12 +82,15 @@ public class Player {
 			}
 
 			if (moveDirection.length() == 2) {
-				deltaX *= Math.sqrt(2);
-				deltaY *= Math.sqrt(2);
+				deltaX /= Math.sqrt(2);
+				deltaY /= Math.sqrt(2);
 			}
 
-			xPos += deltaX;
-			yPos += deltaY;
+			Vector2D movement = new Vector2D(deltaX, deltaY);
+			movement = ShooterServer.getInst().adjustMovementForCollisions(this, movement);
+
+			xPos += movement.getX();
+			yPos += movement.getY();
 			break;
 		}
 	}
@@ -120,8 +129,7 @@ public class Player {
 	}
 
 	public String getSendableForm() {
-		return id + "," + username + "," + team + "," + isSpawned + "," + getSecsUntilSpawn() + "," + xPos + "," + yPos
-				+ ";";
+		return id + "," + username + "," + team + "," + isSpawned + "," + getSecsUntilSpawn() + "," + xPos + "," + yPos;
 	}
 
 	public void setSpawned(boolean isSpawned) {
@@ -139,6 +147,10 @@ public class Player {
 	public int getTeam() {
 		return this.team;
 	}
+	
+	public int getDrawRadius() {
+		return this.drawRadius;
+	}
 
 	public void renewLastUpdateTime() {
 		lastUpdateTime = System.currentTimeMillis();
@@ -155,6 +167,11 @@ public class Player {
 	@Override
 	public int hashCode() {
 		return id;
+	}
+	
+	public void setPosition(double x, double y) {
+		xPos = x;
+		yPos = y;
 	}
 
 	public double getXPos() {
