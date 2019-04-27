@@ -98,7 +98,7 @@ public class ShooterServer {
 				System.out.println("sent the map to the new connection");
 				synchronized (incomingConnection) {
 					incomingSockets.put(incomingConnection, System.currentTimeMillis());
-					System.out.println("added the connection to the map");
+					System.out.println("added the connection to the incoming sockets map");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

@@ -2,6 +2,7 @@ package client;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -85,7 +86,7 @@ public class ShooterClient implements Runnable {
 
 		frame.add(outerPanel);
 
-		InputManager.addListeners(frame);
+		InputManager.addListeners(outerPanel);
 
 		switchPanel("MainMenu");
 
@@ -106,7 +107,7 @@ public class ShooterClient implements Runnable {
 	public static void switchPanel(String panelName) {
 		((CardLayout) outerPanel.getLayout()).show(outerPanel, panelName);
 		curPanelRunning = (Runnable) gamePanels.get(panelName);
-		frame.requestFocus();
+		outerPanel.requestFocusInWindow();
 	}
 
 	public static void setSocket(Socket s) {
@@ -126,7 +127,7 @@ public class ShooterClient implements Runnable {
 	}
 
 	public static void updateGameFromMessage(String message) {
-		System.out.println("process: " + message);
+		// System.out.println("process: " + message);
 
 		if (message.isEmpty()) {
 			return;

@@ -1,5 +1,7 @@
 package shared;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -35,12 +37,16 @@ public class Player {
 	private long nextSpawnTime;
 
 	private double xPos, yPos;
-	
+
+	private double angle;
+
 	private int drawRadius = 20;
 
 	private double movementSpeed = 2;
 
 	private long lastUpdateTime;
+
+	private Weapon curWeapon;
 
 	public Player() {
 		id = NEXT_ID;
@@ -57,6 +63,10 @@ public class Player {
 		renewLastUpdateTime();
 	}
 
+	public void setWeapon(Weapon weapon) {
+		this.curWeapon = weapon;
+	}
+
 	public void updateFromClientMessage(String messageFromClient) {
 
 		switch (messageFromClient) {
@@ -68,6 +78,7 @@ public class Player {
 			break;
 		default:
 			String moveDirection = Util.readUpTo(messageFromClient, ",");
+			messageFromClient = Util.removeTo(messageFromClient, ",");
 			moveDirection = moveDirection.trim();
 			double deltaX = 0, deltaY = 0;
 			if (moveDirection.contains("N")) {
@@ -91,6 +102,9 @@ public class Player {
 
 			xPos += movement.getX();
 			yPos += movement.getY();
+
+			angle = Double.parseDouble(Util.readUpTo(messageFromClient, ","));
+			messageFromClient = Util.removeTo(messageFromClient, ",");
 			break;
 		}
 	}
@@ -109,6 +123,8 @@ public class Player {
 		xPos = Double.parseDouble(Util.readUpTo(messageFromServer, ","));
 		messageFromServer = Util.removeTo(messageFromServer, ",");
 		yPos = Double.parseDouble(Util.readUpTo(messageFromServer, ","));
+		messageFromServer = Util.removeTo(messageFromServer, ",");
+		angle = Double.parseDouble(Util.readUpTo(messageFromServer, ","));
 		messageFromServer = Util.removeTo(messageFromServer, ",");
 	}
 
@@ -129,7 +145,8 @@ public class Player {
 	}
 
 	public String getSendableForm() {
-		return id + "," + username + "," + team + "," + isSpawned + "," + getSecsUntilSpawn() + "," + xPos + "," + yPos;
+		return id + "," + username + "," + team + "," + isSpawned + "," + getSecsUntilSpawn() + "," + xPos + "," + yPos
+				+ "," + angle;
 	}
 
 	public void setSpawned(boolean isSpawned) {
@@ -147,7 +164,7 @@ public class Player {
 	public int getTeam() {
 		return this.team;
 	}
-	
+
 	public int getDrawRadius() {
 		return this.drawRadius;
 	}
@@ -168,7 +185,7 @@ public class Player {
 	public int hashCode() {
 		return id;
 	}
-	
+
 	public void setPosition(double x, double y) {
 		xPos = x;
 		yPos = y;
@@ -180,6 +197,25 @@ public class Player {
 
 	public double getYPos() {
 		return yPos;
+	}
+
+	public void draw(Graphics2D g2d) {
+		g2d.translate(xPos, yPos);
+		g2d.rotate(Math.toRadians(angle));
+		g2d.setColor(Color.BLUE);
+		g2d.fillOval(-drawRadius, -drawRadius, drawRadius * 2, drawRadius * 2);
+
+		// if (curWeapon != null) {
+		g2d.fillRect(0, drawRadius, drawRadius, drawRadius / 4);
+		// }
+
+		g2d.rotate(Math.toRadians(-angle));
+
+		int offset = g2d.getFontMetrics().stringWidth(username) / 2;
+		g2d.setColor(Color.RED);
+		g2d.drawString(username, -offset, -drawRadius * 2);
+
+		g2d.translate(-xPos, -yPos);
 	}
 
 	@Override

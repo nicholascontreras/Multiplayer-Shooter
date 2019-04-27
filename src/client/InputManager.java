@@ -22,6 +22,8 @@ public class InputManager {
 
 	private static boolean LEFT_CLICK, RIGHT_CLICK;
 
+	private static Component LISTENING;
+
 	public static boolean isKeyPressed(int keyCode) {
 		return KEYS_PRESSED.contains(keyCode);
 	}
@@ -43,6 +45,9 @@ public class InputManager {
 	}
 
 	public static void addListeners(Component component) {
+
+		LISTENING = component;
+
 		component.addKeyListener(new KeyListener() {
 			@Override
 			public void keyTyped(KeyEvent e) {

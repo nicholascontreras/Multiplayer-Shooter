@@ -27,8 +27,13 @@ public class GamePanel extends JPanel implements Runnable {
 
 	private static final int TARGET_FPS = 30;
 
+	private static int PLAYER_FIXED_X, PLAYER_FIXED_Y;
+
 	public GamePanel() {
 		this.setPreferredSize(new Dimension(800, 800));
+
+		PLAYER_FIXED_X = 800 / 2;
+		PLAYER_FIXED_Y = 800 * 4 / 5;
 	}
 
 	@Override
@@ -41,7 +46,7 @@ public class GamePanel extends JPanel implements Runnable {
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 		Player localPlayer = ShooterClient.getLocalPlayer();
-		g2d.translate(-localPlayer.getXPos() + getWidth() / 2, -localPlayer.getYPos() + getHeight() / 2);
+		g2d.translate(-localPlayer.getXPos() + PLAYER_FIXED_X, -localPlayer.getYPos() + PLAYER_FIXED_Y);
 		g2d.drawImage(ShooterClient.getMap().getImage(), 0, 0, null);
 
 		g2d.setColor(Color.BLUE);
@@ -50,19 +55,12 @@ public class GamePanel extends JPanel implements Runnable {
 		synchronized (players) {
 			for (Player p : players) {
 				if (p.isSpawned()) {
-					int drawRadius = p.getDrawRadius();
-					g2d.setColor(Color.BLUE);
-					g2d.fillOval((int) p.getXPos() - drawRadius, (int) p.getYPos() - drawRadius, drawRadius * 2,
-							drawRadius * 2);
-					g2d.setColor(Color.RED);
-					int offset = g2d.getFontMetrics().stringWidth(p.getUsername()) / 2;
-					g2d.drawString(p.getUsername(), (int) p.getXPos() - drawRadius - offset,
-							(int) p.getYPos() - drawRadius * 2);
+					p.draw(g2d);
 				}
 			}
 		}
 
-		g2d.translate(localPlayer.getXPos() - getWidth() / 2, localPlayer.getYPos() - getHeight() / 2);
+		g2d.translate(localPlayer.getXPos() - PLAYER_FIXED_X, localPlayer.getYPos() - PLAYER_FIXED_Y);
 	}
 
 	private void updateServerWithInput() {
@@ -79,6 +77,13 @@ public class GamePanel extends JPanel implements Runnable {
 			serverUpdateString += "E";
 		}
 		serverUpdateString += ",";
+
+		int mouseX = InputManager.getMouseX() - PLAYER_FIXED_X;
+		int mouseY = InputManager.getMouseY() - PLAYER_FIXED_Y;
+		double angle = Math.toDegrees(Math.atan2(mouseY, mouseX));
+		serverUpdateString += angle + ",";
+
+		System.out.println("updated server: " + serverUpdateString);
 
 		Util.writeSocket(ShooterClient.getSocket(), serverUpdateString);
 	}
